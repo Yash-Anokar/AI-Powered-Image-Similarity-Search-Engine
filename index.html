@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Triplet Network Similarity Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .upload-section {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        
+        .upload-zone {
+            border: 3px dashed #667eea;
+            border-radius: 8px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+        
+        .upload-zone:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+        
+        .upload-zone.dragover {
+            border-color: #764ba2;
+            background: #e8ebff;
+        }
+        
+        .upload-zone p {
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .upload-zone small {
+            color: #666;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .preview-container {
+            display: none;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        
+        .preview-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+        
+        .preview-image {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .preview-image img {
+            width: 100%;
+            height: auto;
+        }
+        
+        .controls {
+            display: none;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .control-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: #ddd;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #ccc;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            border-left: 4px solid #c33;
+        }
+        
+        .success {
+            background: #efe;
+            color: #3c3;
+            border-left: 4px solid #3c3;
+        }
+        
+        .results {
+            display: none;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .results-header {
+            margin-bottom: 30px;
+        }
+        
+        .results-header h2 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+        
+        .results-header p {
+            color: #666;
+            font-size: 0.95em;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .result-card {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        
+        .result-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            position: relative;
+        }
+        
+        .similarity-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(102, 126, 234, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .result-info {
+            padding: 15px;
+        }
+        
+        .result-name {
+            font-weight: 600;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Similarity Search</h1>
+            <p>Find similar images using Triplet Network embeddings</p>
+        </header>
+        
+        <div id="errorMsg" class="message error"></div>
+        <div id="successMsg" class="message success"></div>
+        
+        <div class="upload-section">
+            <div class="upload-zone" id="uploadZone">
+                <p>Click or drag image here</p>
+                <small>Supported: JPG, JPEG, PNG (Max 16MB)</small>
+            </div>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+        
+        <div class="preview-container" id="previewContainer">
+            <div class="preview-content">
+                <div class="preview-image">
+                    <img id="previewImage" src="" alt="preview">
+                </div>
+                <div>
+                    <div class="controls" id="searchControls">
+                        <div class="control-group">
+                            <label for="numResults">Number of Results:</label>
+                            <input type="number" id="numResults" min="1" max="50" value="10">
+                        </div>
+                        <div class="control-group">
+                            <label for="threshold">Similarity Threshold:</label>
+                            <input type="range" id="threshold" min="0" max="100" value="30">
+                            <small id="thresholdValue">30%</small>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn-primary" id="searchBtn" disabled>Search</button>
+                        <button class="btn-secondary" id="closePreview">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Searching...</p>
+        </div>
+        
+        <div class="results" id="results">
+            <div class="results-header">
+                <h2 id="resultsCount">Results</h2>
+                <p id="resultsSubtitle"></p>
+            </div>
+            <div class="results-grid" id="resultsGrid"></div>
+        </div>
+    </div>
+    
+    <script>
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewImage = document.getElementById('previewImage');
+        const previewContainer = document.getElementById('previewContainer');
+        const searchBtn = document.getElementById('searchBtn');
+        const closePreview = document.getElementById('closePreview');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const resultsGrid = document.getElementById('resultsGrid');
+        const resultsCount = document.getElementById('resultsCount');
+        const resultsSubtitle = document.getElementById('resultsSubtitle');
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+        const searchControls = document.getElementById('searchControls');
+        const numResults = document.getElementById('numResults');
+        const threshold = document.getElementById('threshold');
+        const thresholdValue = document.getElementById('thresholdValue');
+        
+        let selectedFile = null;
+        
+        threshold.addEventListener('input', (e) => {
+            thresholdValue.textContent = e.target.value + '%';
+        });
+        
+        uploadZone.addEventListener('click', () => fileInput.click());
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        closePreview.addEventListener('click', () => {
+            previewContainer.style.display = 'none';
+            selectedFile = null;
+            searchBtn.disabled = true;
+            searchControls.style.display = 'none';
+        });
+        
+        function handleFile(file) {
+            if (!file.type.match('image/(jpeg|jpg|png)')) {
+                showError('Please upload a JPG, JPEG, or PNG image');
+                return;
+            }
+            
+            selectedFile = file;
+            searchBtn.disabled = false;
+            searchControls.style.display = 'block';
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                previewContainer.style.display = 'block';
+                results.style.display = 'none';
+                hideMessages();
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        searchBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('num_results', numResults.value);
+            formData.append('threshold', (threshold.value / 100).toFixed(2));
+            
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            hideMessages();
+            
+            try {
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    if (data.results.length === 0) {
+                        showError('No matches found. Try lowering the similarity threshold.');
+                    } else {
+                        displayResults(data.results);
+                        resultsSubtitle.textContent = `Showing ${data.results.length} matches • Method: ${data.method} • Query time: ${data.query_time_ms} ms`;
+                        showSuccess(`Found ${data.results.length} similar images!`);
+                    }
+                }
+            } catch (error) {
+                showError('Connection error: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+        
+        function displayResults(resultList) {
+            resultsGrid.innerHTML = '';
+            results.style.display = 'block';
+            resultsCount.textContent = `${resultList.length} matches found`;
+            
+            resultList.forEach((result) => {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                
+                const percentage = (result.similarity * 100).toFixed(1);
+                
+                card.innerHTML = `
+                    <div style="position: relative;">
+                        <img src="${result.image}" alt="${result.name}" class="result-image">
+                        <div class="similarity-badge">${percentage}%</div>
+                    </div>
+                    <div class="result-info">
+                        <div class="result-name">${result.name}</div>
+                    </div>
+                `;
+                
+                resultsGrid.appendChild(card);
+            });
+            
+            setTimeout(() => {
+                results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+        
+        function showError(message) {
+            errorMsg.textContent = message;
+            errorMsg.style.display = 'block';
+            successMsg.style.display = 'none';
+        }
+        
+        function showSuccess(message) {
+            successMsg.textContent = message;
+            successMsg.style.display = 'block';
+            errorMsg.style.display = 'none';
+        }
+        
+        function hideMessages() {
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
