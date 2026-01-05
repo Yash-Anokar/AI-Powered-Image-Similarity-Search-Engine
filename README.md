@@ -370,6 +370,7 @@ For questions, issues, or suggestions:
 4. Attach sample images if relevant
 
 ## Acknowledgments
+Special thanks to Intel for giving us this opportunity.
 
 Built with:
 - TensorFlow/Keras for deep learning
